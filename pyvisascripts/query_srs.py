@@ -316,6 +316,9 @@ def connect_and_query_device(desired_attribs: List[str],
                              ) -> List[SR830Attribute]:
     """Connect to SR830 and query for attributes.
 
+    The queryable attributes are: x, y, r, theta, aux# (1-4),
+    ref_freq, and ch# (1-2).
+
     Args:
         desired_attribs: list of strings, with each corresponding to
             the attribute of interest. For example, for attributes
