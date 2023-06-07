@@ -3,7 +3,7 @@
 from pyvisa.highlevel import ResourceManager
 from pyvisa.resources import GPIBInstrument
 from typing import Optional, List, Final
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 
 from contextlib import contextmanager
 import os
@@ -35,7 +35,6 @@ def silence_glib_ctypes():
     os.close(original_stderr)
 
 
-@dataclass
 class VISAGenerics:
     """Holds generic pyvisa constants."""
 
@@ -44,18 +43,33 @@ class VISAGenerics:
     gpib_id_query: Final[str] = '*IDN?'
 
 
+class SR830Params:
+    """Constant parameters tied to SR830 device."""
+
+    id: Final[str] = 'Stanford_Research_Systems,SR830,'
+    end_of_str: Final[str] = '\n'
+    attrib_separator: Final[str] = ','
+    snap_request_str: Final[str] = 'SNAP?'
+    snap_ids_range: Final[tuple] = (2, 6)
+
+
 @dataclass
 class SR830Attribute:
     """Holds an SR830 attribute (value + units).
 
-    TODO: Do we hold the name? or is that handled as a dict?
     Args:
+        name: name of the attribute.
         units: unit of the attribute.
-        val: value of the attribute.
+        value: value of the attribute.
     """
 
+    name: Final[str]
     units: Final[str]
-    val: Optional[float] = None
+    value: Optional[str] = None
+
+    def __repr__(self):
+        """Override dataclass repr for legibility."""
+        return "%s: %s %s" % (self.name, self.value, self.units)
 
 
 @dataclass
@@ -76,18 +90,6 @@ class SR830AttribMeta:
     requested: bool = False
 
 
-@dataclass
-class SR830Params:
-    """Constant parameters tied to SR830 device."""
-
-    id: Final[str] = 'Stanford_Research_Systems,SR830,'
-    end_of_str: Final[str] = '\n'
-    attrib_separator: Final[str] = ','
-    snap_request_str: Final[str] = 'SNAP'
-    snap_ids_range: Final[tuple] = (2, 6)
-
-
-@dataclass
 class SR830Communicator:
     """Helper class to communicate with SR830 and receive data.
 
@@ -106,17 +108,23 @@ class SR830Communicator:
         ch#: each of the channels, in whatever the display units are.
     """
 
-    x: SR830AttribMeta(units='V', snap_id='1', query_str='OUTP?1')
-    y: SR830AttribMeta(units='V', snap_id='2', query_str='OUTP?2')
-    r: SR830AttribMeta(units='V', snap_id='3', query_str='OUTP?3')
-    theta: SR830AttribMeta(units='deg', snap_id='4', query_str='OUTP?4')
-    aux1: SR830AttribMeta(units='V', snap_id='5', query_str='OAUX?1')
-    aux2: SR830AttribMeta(units='V', snap_id='6', query_str='OAUX?2')
-    aux3: SR830AttribMeta(units='V', snap_id='7', query_str='OAUX?3')
-    aux4: SR830AttribMeta(units='V', snap_id='8', query_str='OAUX?4')
-    ref_freq: SR830AttribMeta(units='Hz', snap_id='9', query_str=None)
-    ch1: SR830AttribMeta(units='n/a', snap_id='10', query_str='OUTR?1')
-    ch2: SR830AttribMeta(units='n/a', snap_id='11', query_str='OUTR?2')
+    def __init__(self):
+        """Construct, does not take any input args."""
+        self.x = SR830AttribMeta(units='V', snap_id='1', query_str='OUTP?1')
+        self.y = SR830AttribMeta(units='V', snap_id='2', query_str='OUTP?2')
+        self.r = SR830AttribMeta(units='V', snap_id='3', query_str='OUTP?3')
+        self.theta = SR830AttribMeta(units='deg', snap_id='4',
+                                     query_str='OUTP?4')
+        self.aux1 = SR830AttribMeta(units='V', snap_id='5', query_str='OAUX?1')
+        self.aux2 = SR830AttribMeta(units='V', snap_id='6', query_str='OAUX?2')
+        self.aux3 = SR830AttribMeta(units='V', snap_id='7', query_str='OAUX?3')
+        self.aux4 = SR830AttribMeta(units='V', snap_id='8', query_str='OAUX?4')
+        self.ref_freq = SR830AttribMeta(units='Hz', snap_id='9',
+                                        query_str=None)
+        self.ch1 = SR830AttribMeta(units='n/a', snap_id='10',
+                                   query_str='OUTR?1')
+        self.ch2 = SR830AttribMeta(units='n/a', snap_id='11',
+                                   query_str='OUTR?2')
 
     def set_requested_data(self, provided_fields: List[str]):
         """Set the attributes we would like to obtain data on.
@@ -124,16 +132,16 @@ class SR830Communicator:
         Args:
             provided_fields: list of strings, with each being an attribute
                 (e.g. 'x' for x attrib). If a provided value does not
-                correspond to a field, we skip it.
+                correspond to an attribute, we skip it.
         Returns:
             None.
         Raises:
             ???
         """
-        for field in fields(self):
-            current_attr = getattr(self, field.name)
-            current_attr.requested = field.name in provided_fields
-            setattr(self, field.name, current_attr)
+        for var in vars(self):
+            current_attr = getattr(self, var)
+            current_attr.requested = var in provided_fields
+            setattr(self, var, current_attr)
 
     def get_query_list(self) -> List[str]:
         """Get list of queries to send to device.
@@ -156,8 +164,8 @@ class SR830Communicator:
 
         # Build up our queries (based on which attributes are
         # requested).
-        for field in fields(self):
-            current_attr = getattr(self, field.name)
+        for var in vars(self):
+            current_attr = getattr(self, var)
             if current_attr.requested:
                 if current_attr.query_str:
                     individual_queries.append(current_attr.query_str)
@@ -176,25 +184,35 @@ class SR830Communicator:
             individual_queries.clear()
 
             # Build up snap calls that fit the call size constraints
-            while len(snap_ids) > 0:
+            num_ids_pre_query_creation = len(snap_ids)
+            while num_ids_pre_query_creation >= SR830Params.snap_ids_range[0]:
                 added_ids = 0
                 query = SR830Params.snap_request_str
 
                 # Build up each snap query to fit the 'ids range'
-                # constraints
-                while (added_ids < SR830Params.snap_ids_range[1] and
-                       (len(snap_ids) % SR830Params.snap_ids_range[1] >=
-                        SR830Params.snap_ids_range[0])):
+                # constraints: we need to ensure that each snap query
+                # is within the min/max range of snap_ids_range.
+                last_query_check = True
+                queries_remaining_check = True
+                while last_query_check or queries_remaining_check:
                     query += snap_ids.pop(0) + SR830Params.attrib_separator
                     added_ids += 1
+                    last_query_check = (num_ids_pre_query_creation <=
+                                        SR830Params.snap_ids_range[1]
+                                        and snap_ids)
+                    queries_remaining_check = (num_ids_pre_query_creation >
+                                               SR830Params.snap_ids_range[1] and
+                                               (len(snap_ids) %
+                                                SR830Params.snap_ids_range[1] >=
+                                                SR830Params.snap_ids_range[0]))
 
                 # Once we have a snap query ready, add it to our list
                 individual_queries.append(query)
-
+                num_ids_pre_query_creation = len(snap_ids)
         return individual_queries
 
     def parse_responses(self, query_responses: List[str]
-                          ) -> List[SR830Attribute]:
+                        ) -> List[SR830Attribute]:
         """Parse the response(s) received from a provided list of queries.
 
         Args:
@@ -204,30 +222,31 @@ class SR830Communicator:
             A list of SR830Attributes.
 
         Raises:
-            - IndexError, if len(query_results) != the number of fields with
+            - IndexError, if len(query_results) != len(vars(self)) with
                 requested==True (this implies a mismatch between query
                 creation and response).
         """
         # Parse the response(s) by splitting into individual data results
         # (i.e. going from a List of response strings to a List of floats)
-        results = List[float]
+        results = []
         for response in query_responses:
-            values = response.split(SR830Params.attrib_separator)
-            results = [*results, *values]
+            for value in response.split(SR830Params.attrib_separator):
+                results.append(value)
 
         # Create a list of SR830Attributes containing these values
-        attributes = List[SR830Attribute]
-        for field in fields(self):
-            current_attr = getattr(self, field.name)
+        attributes = []
+        for var in vars(self):
+            current_attr = getattr(self, var)
 
             if current_attr.requested:
-                attr = SR830Attribute(value=results.pop(0),
+                attr = SR830Attribute(name=var,
+                                      value=results.pop(0),
                                       units=current_attr.units)
                 attributes.append(attr)
 
         # Confirm that there are no extra results, as this would imply
         # a mismatch between query creation and response.
-        if not results.empty():
+        if results:
             raise IOError("The query creation and response do not match!")
 
         return attributes
@@ -257,7 +276,7 @@ def connect_to_device(force_pyvisapy: bool = False, visa_lib_path: str = ''
         for instr_id in rm.list_resources():
             if VISAGenerics.gpib_id in instr_id:
                 instr = rm.open_resource(instr_id)
-                if SR830Params.id in instr.query(VISAGenerics.gpib_query):
+                if SR830Params.id in instr.query(VISAGenerics.gpib_id_query):
                     return instr
 
         # The SP-830 was not found!
@@ -283,13 +302,12 @@ def query_device(device: GPIBInstrument, desired_attribs: List[str]
     communicator.set_requested_data(desired_attribs)
     queries = communicator.get_query_list()
 
-    responses = List[str]
+    responses = []
     for query in queries:
-        response = device.query(query).split(SR830Params.end_of_string)[0]
+        response = device.query(query).split(SR830Params.end_of_str)[0]
         responses.append(response)
 
-    results = communicator.parse_responses(responses)
-    return results
+    return communicator.parse_responses(responses)
 
 
 def connect_and_query_device(desired_attribs: List[str],

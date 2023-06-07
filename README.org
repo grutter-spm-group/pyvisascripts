@@ -75,3 +75,11 @@ To validate that the installation procedure finished successfully, we provide a 
 #+begin_src bash
   pytest .
 #+end_src
+
+* Running
+
+To run the script, simply call query_srs.py with suitable input arguments:
+
+#+begin_src bash
+  python query_srs.py "['x','y']"  # Query for x and y attributes
+#+end_src
