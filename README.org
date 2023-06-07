@@ -1,0 +1,77 @@
+#+title: Readme
+
+* Description
+
+This repository focuses on doing two things:
+1. Ensuring a compatible pyvisa setup is configured for reading data over the VISA interface;
+2. Providing some helper scripts to interact with some devices used in our lab.
+
+For ease of setup, it installs 2 Python modules which you may not require:
+- pyvisa-py: the open-source Python VISA backend;
+- gpib-ctypes: the cross-platform C bindings for interacting with either NI GPIB or linux-gpib drivers.
+
+Note: If you are using an IVI backend (or the NI-GPIB interface), you do not require these. In such a case, this repository may not be very useful for you.
+
+* A brief explanation of VISA
+
+A functioning VISA configuration requires:
+1. A VISA backend;
+2. Whatever required backend interface drivers (e.g. USB, GPIB).
+
+** VISA Backend
+
+This is the library/set of libraries that implements the VISA API. VISA = Virtual Instrument Software Architecture, a hardware-agnostic API for interacting with scientific instruments. It allows you to use the same API to interact with instruments from different manufacturers, with different interfaces.
+
+There are 2 options for this with pyvisa:
+- Proprietary / IVI VISA (e.g. NI-VISA): this backend should be provided by your manufacturer. In the case of National Instruments, the package is ni-visa, and it consists of an ni-visa shared library (along with other .so files). It depends on other proprietary low-level interface drivers.
+- pyvisa-py: this is a pure python implementation of the backend. It depends on other open-source code/drivers for the low-level interface.
+
+** Interface Drivers
+
+These are the set of interface-specific drivers, modules, or libraries that interface with VISA, allowing it to be interface-generic. They each interact with their own interface, but expose the same generic API to VISA.
+
+So, for example, there may be a usb-interface library, and a gpib-interface library for interfacing with devices via USB and/or GPIB.
+
+Note: in the explicit case of a GPIB-USB dongle, the dongle is likely interfacing *via* USB, but emulating the GPIB interaction. Therefore, a GPIB interface driver would still be needed.
+
+In the case of a proprietary VISA backend, installing the VISA drivers may *also* install the associated interface drivers. For National Instruments, I have installed the proprietary drivers (NI-488.2 for GPIB) and the VISA drivers (NI-VISA) separately.
+
+In the case of pyvisa-py, each interface has their own (i) python module, and (ii) potentially, depends on a separate interface driver. For example, for the USB interface, all that is required is using the pyusb package (which contains the usb module); for the GPIB interface, it requires the gpib-ctypes package and either (a) the proprietary NI GPIB drivers (NI-488.2), or (b) the open-source linux-gpib drivers.
+
+* Installation
+
+To set up your computer for pyvisa, then, requires:
+1. Installation of all necessary python packages.
+2. Installation of the desired VISA backend and interface drivers.
+
+Performing (1) is performed by cloning this repository and installing its dependencies. Performing (2) may be more involved. For a setup using a proprietary VISA backend, please follow the manufacturer's instructions. For a Linux device using the pyvisa-py backend and linux-gpib interface drivers, we provide a handy install script to simplify the procedure.
+
+** Setup repo and install python dependencies
+
+Clone this repository and install the dependencies in its pyproject.toml file.
+
+If you are using poetry, you can do the following once in the cloned directory:
+
+#+begin_src bash
+  poetry install
+#+end_src
+
+** Install Linux backend (pyvisa-py + linux-gpib)
+
+In the main directory:
+
+#+begin_src bash
+  cd installscripts/linux-gpib
+  ./install-linux-gpib.sh
+#+end_src
+
+Note: this script was taken from https://github.com/jakeogh/linux-gpib-installer and modified slightly to meet obscure personal criteria of 'prettification'. All appreciation should go to jakeogh. The changes made were.
+
+Once installed, you will have a 'base' linux-gpib configuration, which includes a
+* Testing
+
+To validate that the installation procedure finished successfully, we provide a set of pytests. These are fairly basic, and mostly interact with existing tests. To run them, run the following in the root directory:
+
+#+begin_src bash
+  pytest .
+#+end_src
