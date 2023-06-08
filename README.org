@@ -46,6 +46,18 @@ To set up your computer for pyvisa, then, requires:
 
 Performing (1) is performed by cloning this repository and installing its dependencies. Performing (2) may be more involved. For a setup using a proprietary VISA backend, please follow the manufacturer's instructions. For a Linux device using the pyvisa-py backend and linux-gpib interface drivers, we provide a handy install script to simplify the procedure.
 
+** Ensure prerequisites
+
+Make sure we have certain essentials:
+
+#+begin_src bash
+  sudo apt install build-essential git -y
+#+end_src
+
+We assume you need git to clone this repo. If otherwise, you can likely skip this.
+
+Note: this readme makes reference to poetry as the python virtual environment tool used. To use those commands, ensure you have installed poetry (see https://python-poetry.org/docs).
+
 ** Setup repo and install python dependencies
 
 Clone this repository and install the dependencies in its pyproject.toml file.
@@ -76,6 +88,11 @@ To validate that the installation procedure finished successfully, we provide a 
   pytest .
 #+end_src
 
+or, with poetry (assuming you do not want to activate your environment):
+#+begin_src bash
+  poetry run pytest .
+#+end_src
+
 * Running
 
 To run the script, simply call query_srs.py with suitable input arguments:
@@ -83,3 +100,11 @@ To run the script, simply call query_srs.py with suitable input arguments:
 #+begin_src bash
   python query_srs.py "['x','y']"  # Query for x and y attributes
 #+end_src
+
+or, with poetry (assuming you do not want to activate your environment):
+#+begin_src bash
+  poetry run python query_srs.py "['x','y']"  # Query for x and y attributes
+#+end_src
+
+* Notes
+- The current script spends the majority of its time in listing devices (rm.list_resources()). This delay could be minimized if we implemented a polling method as well, where data is printed out every x ms.

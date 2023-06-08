@@ -31,22 +31,6 @@ else
         exit 1 ;
 fi
 
-exit 1 ;
-
-set -x
-
-# module_path=$(python3 << EOF
-# from importlib import resources
-# with resources.path('linux_gpib_installer', '_linux_gpib_installer_debian_11.sh') as rp:
-#         print(rp.parent.as_posix())
-# EOF
-# )
-
-# echo "${module_path}"
-
-# linux_gpib_repo="${module_path}/linux-gpib"
-# test -d "${linux_gpib_repo}" || { echo "${linux_gpib_repo} is not a directory. Exiting." ; exit 1 ; }
-
 PATH="/home/${USER}/.local/bin:${PATH}"
 export PATH=${PATH}
 
@@ -54,7 +38,6 @@ echo "Creating temporary directory at ~/tmp/ for installation..."
 userdir="/home/${USER}"
 workdir="/home/${USER}/tmp"
 mkdir "/home/${USER}/tmp" > /dev/null 2>&1
-# test -d "${linux_gpib_repo}" || { echo "${workdir} is not a directory. Exiting." ; exit 1 ; }
 cd "${workdir}" || exit 1
 
 echo "Installing dependencies for kernel driver installation..."
@@ -62,11 +45,8 @@ sudo apt-get install devscripts dkms subversion git -y || exit 1
 sudo apt-get install flex -y || exit 1  # needed for make
 sudo apt-get install bison -y || exit 1
 sudo apt-get install byacc -y || exit 1
-
-# sudo apt-get install python3-pip -y || exit 1
-# sudo apt-get install python3-usb -y || exit 1
-# sudo apt-get install python3-serial -y || exit 1
-#sudo apt-get install python3-pyvisa-py -y || exit 1  # pip installs a newer version
+sudo apt-get install debhelper-compat -y || exit 1
+sudo apt-get install python3-setuptools -y || exit 1
 
 echo "Cloning git repository linux-gpib-dkms, which allows us to install linux-gpib via dkms..."
 # https://github.com/drogenlied/linux-gpib-dkms
@@ -78,7 +58,6 @@ cd "${workdir}" || exit 1
 echo "Cloning the svn linux-gpib repository, so we can build it..."
 test -e linux-gpib && rm -rf linux-gpib  # clear the bases
 svn checkout https://svn.code.sf.net/p/linux-gpib/code/trunk linux-gpib || exit 1
-# test -e linux-gpib || { cp -ar "${linux_gpib_repo}" . || exit 1 ; } # This copies from source, we don't have it in source
 
 echo "Copying linux-gpib-dkms 'debian' directory into linux-gpib source code, for building..."
 cp -ar "${workdir}"/linux-gpib-dkms/debian "${workdir}"/linux-gpib/linux-gpib-kernel/ || exit 1
