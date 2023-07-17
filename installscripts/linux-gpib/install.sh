@@ -51,7 +51,7 @@ sudo apt-get install python3-setuptools -y || exit 1
 echo "Cloning git repository linux-gpib-dkms, which allows us to install linux-gpib via dkms..."
 # https://github.com/drogenlied/linux-gpib-dkms
 cd linux-gpib-dkms || { git clone https://github.com/drogenlied/linux-gpib-dkms || exit 1 ; }
-cd linux-gpib-dkms && { git pull origin --ff-only || exit 1 ; }
+git pull origin --ff-only || exit 1
 
 cd "${workdir}" || exit 1
 
