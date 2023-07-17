@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-from pyvisa.highlevel import ResourceManager
-from pyvisa.resources import GPIBInstrument
 from typing import Optional, List, Final
 from dataclasses import dataclass
 
 from contextlib import contextmanager
 import os
 
+from pyvisa.highlevel import ResourceManager
+from pyvisa.resources import GPIBInstrument
 import fire
 
 
@@ -136,7 +136,7 @@ class SR830Communicator:
         Returns:
             None.
         Raises:
-            ???
+            None.
         """
         for var in vars(self):
             current_attr = getattr(self, var)
@@ -171,7 +171,7 @@ class SR830Communicator:
                     individual_queries.append(current_attr.query_str)
                 snap_ids.append(current_attr.snap_id)
 
-        if len(snap_ids) == 1 and len(individual_queries):
+        if len(snap_ids) == 1 and len(individual_queries) == 0:
             # This should only happen in the case of res_freq,
             # which cannot be queried outside of a snap. Throw
             # an error.
@@ -265,7 +265,7 @@ def connect_to_device(force_pyvisapy: bool = False, visa_lib_path: str = ''
             upon failure.
 
     Raises:
-        ???
+        None.
     """
     with silence_glib_ctypes():
         rm_args = (VISAGenerics.pyvisapy_cmd if force_pyvisapy
@@ -290,13 +290,13 @@ def query_device(device: GPIBInstrument, desired_attribs: List[str]
     Args:
         device: GPIBInstrument instance corresponding to SR830.
         desired_atribs: list of strings, with each corresponding to
-            the attribute of interest.
+
 
     Returns:
         List of SR830Attribute, corresponding to the requested
             attributes's reported values (and units).
     Raises:
-        ???
+        None.
     """
     communicator = SR830Communicator()
     communicator.set_requested_data(desired_attribs)
@@ -313,7 +313,7 @@ def query_device(device: GPIBInstrument, desired_attribs: List[str]
 def connect_and_query_device(desired_attribs: List[str],
                              visa_lib_path: str = '',
                              force_pyvisapy: bool = False,
-                             ) -> List[SR830Attribute]:
+                             ) -> List[SR830Attribute] | None:
     """Connect to SR830 and query for attributes.
 
     The queryable attributes are: x, y, r, theta, aux# (1-4),
@@ -330,13 +330,14 @@ def connect_and_query_device(desired_attribs: List[str],
         List of SR830Attribute, corresponding to the requested
             attributes's reported values (and units).
     Raises:
-        ???
+        None.
     """
     device = connect_to_device(force_pyvisapy, visa_lib_path)
     if device:
         return query_device(device, desired_attribs)
     else:
         print('Device not found, exiting.')
+        return None
 
 
 if __name__ == '__main__':
