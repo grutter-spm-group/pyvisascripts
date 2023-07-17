@@ -3,7 +3,7 @@ name = "pyvisascripts"
 version = "0.1.0"
 description = ""
 authors = ["Nick Sullivan <nsulmol@gmail.com>"]
-readme = "README.md"
+readme = "README.org"
 
 [tool.poetry.dependencies]
 python = "^3.10"
