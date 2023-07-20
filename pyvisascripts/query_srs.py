@@ -66,12 +66,12 @@ class SR830Attribute:
 
     name: Final[str]
     units: Final[str]
-    value: float | [float]
+    value: float | List[float]
 
     def __repr__(self):
         """Override dataclass repr for legibility."""
         if isinstance(self.value, list):
-            return (f"{self.name}: mean: {fmean(self.value)} {self.units},"
+            return (f"{self.name}: mean: {fmean(self.value)} {self.units}, "
                     f"stdev: {stdev(self.value)} {self.units}")
         else:
             return f"{self.name}: {self.value} {self.units}"
@@ -351,6 +351,7 @@ def connect_and_query_device(desired_attribs: List[str],
             # Merge all responses
             for idx, attr in enumerate(final_responses):
                 attr.value = [x.value for x in many_responses[:][idx]]
+            return final_responses
 
 
     else:
