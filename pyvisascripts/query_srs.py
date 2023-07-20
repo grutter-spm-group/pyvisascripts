@@ -347,10 +347,12 @@ def connect_and_query_device(desired_attribs: List[str],
         else:
             many_responses = [query_device(device, desired_attribs) for
                               i in range(data_points_per_attrib)]
-            final_responses = many_responses[0]
-            # Merge all responses
-            for idx, attr in enumerate(final_responses):
-                attr.value = [x.value for x in many_responses[:][idx]]
+            # Kind of ugly filtering, no numpy here :(.
+            final_responses = many_responses.pop(0)
+            for attr_idx, attr in enumerate(final_responses):
+                attr.value = [attr.value]
+                for response in many_responses:
+                    attr.value.append(response[attr_idx].value)
             return final_responses
 
 
