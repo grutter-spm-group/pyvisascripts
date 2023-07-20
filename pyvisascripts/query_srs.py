@@ -316,7 +316,7 @@ def query_device(device: GPIBInstrument, desired_attribs: List[str]
 
 
 def connect_and_query_device(desired_attribs: List[str],
-                             data_points_per_attrib: float = 1,
+                             points_per_attrib: float = 1,
                              visa_lib_path: str = '',
                              force_pyvisapy: bool = False,
                              ) -> List[SR830Attribute] | None:
@@ -329,7 +329,7 @@ def connect_and_query_device(desired_attribs: List[str],
         desired_attribs: list of strings, with each corresponding to
             the attribute of interest. For example, for attributes
             x and y, provide ['x', 'y'].
-        data_points_per_attrib: how many times we query each attribute.
+        points_per_attrib: how many times we query each attribute.
             if > 1, we will average them and show the average + std dev.
         visa_lib_path: an optional string path to the visa library.
         force_pyvisapy: bool, we force the pyvisa-py backend if True.
@@ -342,11 +342,11 @@ def connect_and_query_device(desired_attribs: List[str],
     """
     device = connect_to_device(force_pyvisapy, visa_lib_path)
     if device:
-        if data_points_per_attrib <= 1:
+        if points_per_attrib <= 1:
             return query_device(device, desired_attribs)
         else:
             many_responses = [query_device(device, desired_attribs) for
-                              i in range(data_points_per_attrib)]
+                              i in range(points_per_attrib)]
             # Kind of ugly filtering, no numpy here :(.
             final_responses = many_responses.pop(0)
             for attr_idx, attr in enumerate(final_responses):
