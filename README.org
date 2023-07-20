@@ -74,7 +74,7 @@ In the main directory:
 
 #+begin_src bash
   cd installscripts/linux-gpib
-  ./install-linux-gpib.sh
+  bash ./install.sh
 #+end_src
 
 Note: this script was taken from https://github.com/jakeogh/linux-gpib-installer and modified slightly to meet obscure personal criteria of 'prettification'. All appreciation should go to jakeogh.
@@ -82,7 +82,7 @@ Note: this script was taken from https://github.com/jakeogh/linux-gpib-installer
 Once installed, you will have a 'base' linux-gpib configuration, which includes a default gpib.conf file. In order to be able to interact with the GPIB-USB-HS dongle, you need to set upa  new gpib.conf in /etc/. To do this, run the script setup_gpib_usb_hs.sh.
 
 #+begin_src bash
-  ./setup_gpib_usb_hs.sh
+  bash ./setup_gpib_usb_hs.sh
 #+end_src
 
 * Testing
